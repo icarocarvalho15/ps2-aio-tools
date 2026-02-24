@@ -1,4 +1,6 @@
 import argparse
+from core.logger import Logger
+from core.validator import OPLValidator
 
 def main():
     parser = argparse.ArgumentParser(description="PS2 AIO Tools")
@@ -9,10 +11,18 @@ def main():
 
     args = parser.parse_args()
 
-    print("Root:", args.root)
-    print("Gerar CFG PS2:", args.ps2cfg)
-    print("Organizar POPS:", args.pops)
-    print("Renomear arquivos:", args.rename)
+    logger = Logger()
+    logger.info("PS2 AIO Tools iniciado")
+
+    validator = OPLValidator(args.root, logger)
+
+    if not validator.validate_root():
+        logger.error("Encerrando por root inválido")
+        return
+
+    validator.validate_structure()
+
+    logger.ok("Validação concluída")
 
 if __name__ == "__main__":
     main()
