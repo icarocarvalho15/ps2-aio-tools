@@ -1,12 +1,29 @@
+import logging
 from datetime import datetime
+from pathlib import Path
 
 class Logger:
-    def _log(self, level, message):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] [{level}] {message}")
+    def __init__(self):
+        log_file = Path(__file__).parent.parent / "session_history.log"
+        logging.basicConfig(
+            filename=log_file,
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            encoding='utf-8'
+        )
 
-    def info(self, msg): self._log("INFO", msg)
-    def ok(self, msg): self._log("OK", msg)
-    def warn(self, msg): self._log("WARN", msg)
-    def error(self, msg): self._log("ERROR", msg)
-    def skip(self, msg): self._log("SKIP", msg)
+    def info(self, msg):
+        print(f"[INFO] {msg}")
+        logging.info(msg)
+
+    def error(self, msg):
+        print(f"[ERRO] {msg}")
+        logging.error(msg)
+        
+    def ok(self, msg):
+        print(f"[OK] {msg}")
+        logging.info(f"SUCESSO: {msg}")
+
+    def skip(self, msg):
+        print(f"[SKIP] {msg}")
+        logging.info(f"PULADO: {msg}")

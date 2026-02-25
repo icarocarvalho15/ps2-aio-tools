@@ -3,6 +3,7 @@ import re
 import requests
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
+from core.cache_manager import CacheManager
 
 load_dotenv()
 
@@ -11,6 +12,7 @@ class MetadataManager:
         self.client_id = os.getenv("IGDB_CLIENT_ID")
         self.client_secret = os.getenv("IGDB_CLIENT_SECRET")
         self.logger = logger
+        self.cache = CacheManager(logger)
         self.access_token = self._get_access_token()
 
     def _get_access_token(self):
@@ -48,9 +50,13 @@ class MetadataManager:
             return None
 
     def fetch_game_data(self, game_name, game_type, game_id=None):
+        cached_data = self.cache.get_game(game_id, game_name)
+        if cached_data:
+            return cached_data
+
         if not self.access_token: return None
         
-        game_name_clean = re.sub(r'\b(Disc|CD|Disk)\s*[1-4]\b', '', game_name, flags=re.IGNORECASE).strip()
+        game_name_clean = re.sub(r'\b(Disc|CD|Disk|Disco)\s*[1-4]\b', '', game_name, flags=re.IGNORECASE).strip()
         
         platform_id = 8 if game_type == "PS2" else 7
         data = None
@@ -97,5 +103,8 @@ class MetadataManager:
                 try:
                     g['name'] = translator.translate(g['name'])
                 except: pass
+        
+        cache_key = game_id if game_id else game_name
+        self.cache.save_game(cache_key, game)
         
         return game

@@ -1,53 +1,55 @@
+import os
 import re
 from pathlib import Path
 
-def sanitize(name):
-    name = re.sub(r'\.(iso|vcd|elf)$', '', name, flags=re.IGNORECASE)
-    name = re.sub(r'[A-Z]{3,4}[_-][0-9]{3}\.[0-9]{2}', '', name)
-    name = re.sub(r'[\(\[][^\]\)]*[\)\]]', '', name)
-    name = re.sub(r'[\._\-]', ' ', name)
-    blacklist = r'\b(iso|bin|img|mod|modded|ps2|ps1|br|pt|usa|eur|jpn|rip|patched|vcd|v\d+)\b'
-    name = re.sub(blacklist, '', name, flags=re.IGNORECASE)
-    name = ' '.join(name.split()).title().strip()
-    excecoes = {
-        r"\bGta\b": "GTA",
-        r"\bOpl\b": "OPL",
-        r"\bGsm\b": "GSM",
-        r"\bVmc\b": "VMC",
-        r"\bII\b": "II",
-        r"\bIII\b": "III",
-        r"\bIV\b": "IV",
-        r"\bV\b": "V",
-        r"\bResident Evil\b": "Resident Evil"
-    }
-    for errado, correto in excecoes.items():
-        name = re.sub(errado, correto, name)        
-    return name
-
 def execute_rename(item, keep_id, logger):
+    """
+    Renomeia arquivos de PS1 e PS2, limpando tags de região e lixo,
+    mantendo a compatibilidade com a estrutura do OPL e POPStarter.
+    """
     old_path = Path(item['full_path'])
-    clean = sanitize(item['file_name'])
-    ext = old_path.suffix.lower()
+    folder = old_path.parent
+    ext = old_path.suffix
+    name = old_path.stem
 
-    if item['type'] == "PS2" and keep_id and item['game_id']:
-        formatted_id = item['game_id'].replace('-', '_')
-        new_name = f"{formatted_id}.{clean}{ext}"
+    name = re.sub(r'^[A-Z]{3,4}[_-][0-9]{3}\.[0-9]{2}\.', '', name)
+
+    patterns = [
+        r'\((USA|Europe|Japan|UK|France|Germany|Italy|Spain|Brazil|Australia|Portugal)\)',
+        r'\((En,Es,It,De|En,Fr,De|En,Es,It|Multi\d+|En|Es|Pt|Br|En,Fr,Es)\)',
+        r'(\[| \()v\d+(\.\d+)*(\]| \))|(\[| \()Rev \d+(\]| \))',
+        r'\[(Hacked|Beta|Prototype|Alt|Demo|Translated|PT-BR|English|Mod|Modded|Patched|FIX)\]',
+        r'\(ISO\)',
+        r'\(Unl\)'
+    ]
+
+    clean_name = name
+    for pattern in patterns:
+        clean_name = re.sub(pattern, '', clean_name, flags=re.IGNORECASE)
+
+    if item['type'] != "PS1":
+        clean_name = re.sub(r'\b(Disc|CD|Disk|Disco)\s*[1-4]\b', '', clean_name, flags=re.IGNORECASE)
+
+    clean_name = re.sub(r'\s+', ' ', clean_name).strip()
+
+    if item['type'] == "PS2" and item['game_id'] and keep_id:
+        new_name = f"{item['game_id']}.{clean_name}{ext}"
     else:
-        new_name = f"{clean}{ext}"
+        new_name = f"{clean_name}{ext}"
 
-    new_path = old_path.parent / new_name
+    new_path = folder / new_name
 
-    if old_path == new_path:
-        return str(old_path)
-
-    try:
-        if not new_path.exists():
-            old_path.rename(new_path)
-            logger.ok(f"Renomeado: {new_name}")
-            return str(new_path)
-        else:
-            logger.warn(f"Ignorado (já existe): {new_name}")
-            return str(new_path)
-    except Exception as e:
-        logger.error(f"Erro no rename: {e}")
-        return str(old_path)
+    if old_path != new_path:
+        try:
+            if not new_path.exists():
+                os.rename(old_path, new_path)
+                logger.ok(f"Renomeado ({item['type']}): {old_path.name} -> {new_name}")
+                return str(new_path)
+            else:
+                logger.warn(f"Destino já existe, mantendo original: {new_name}")
+                return str(old_path)
+        except Exception as e:
+            logger.error(f"Erro ao renomear {item['type']}: {e}")
+            return str(old_path)
+    
+    return str(old_path)
