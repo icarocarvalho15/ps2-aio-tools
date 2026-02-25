@@ -33,22 +33,13 @@ class MetadataManager:
             self.logger.error(f"Erro de autenticação IGDB: {e}")
             return None
 
-    def _api_call(self, game_name, platform_id):
-        """Método interno para realizar a requisição bruta à API."""
+    def _api_call(self, query):
+        """Método unificado para chamadas à API IGDB."""
         url = "https://api.igdb.com/v4/games"
         headers = {
             "Client-ID": self.client_id,
             "Authorization": f"Bearer {self.access_token}"
         }
-        
-        query = f'''
-            search "{game_name}"; 
-            fields name, summary, first_release_date, genres.name, rating, total_rating, 
-            involved_companies.developer, involved_companies.company.name;
-            where platforms = ({platform_id}) & version_parent = n;
-            sort first_release_date asc;
-            limit 1;
-        '''
         
         try:
             response = requests.post(url, headers=headers, data=query)
@@ -56,19 +47,37 @@ class MetadataManager:
         except:
             return None
 
-    def fetch_game_data(self, game_name, game_type):
-        if not self.access_token:
-            return None
+    def fetch_game_data(self, game_name, game_type, game_id=None):
+        if not self.access_token: return None
+        
+        game_name_clean = re.sub(r'\b(Disc|CD|Disk)\s*[1-4]\b', '', game_name, flags=re.IGNORECASE).strip()
         
         platform_id = 8 if game_type == "PS2" else 7
+        data = None
 
-        data = self._api_call(game_name, platform_id)
+        if game_id:
+            variants = [game_id, game_id.replace('-', ''), game_id.replace('.', '').replace('-', '')]
+            for vid in variants:
+                query = f'fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating, involved_companies.developer, involved_companies.company.name; where external_games.uid = "{vid}" & platforms = ({platform_id}); limit 1;'
+                data = self._api_call(query)
+                if data: break
 
         if not data:
-            clean_name = re.sub(r'\b(definitive edition|special edition|pt br|patch|v\d+|hacked|modded)\b', '', game_name, flags=re.IGNORECASE).strip()
-            if clean_name != game_name:
-                self.logger.info(f"Busca exata falhou. Tentando simplificar: {clean_name}")
-                data = self._api_call(clean_name, platform_id)
+            clean_search = re.sub(r'^[A-Z]{3,4}[_-][0-9]{3}\.[0-9]{2}\.', '', game_name_clean)
+            query = f'search "{clean_search}"; fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating, involved_companies.developer, involved_companies.company.name; where platforms = ({platform_id}); limit 1;'
+            data = self._api_call(query)
+
+        if not data:
+            clean_name = re.sub(r'\b(definitive edition|special edition|pt br|patch|patched|v\d+|hacked|mod|modded)\b', '', game_name_clean, flags=re.IGNORECASE).strip()
+            if clean_name != game_name_clean:
+                query = f'''
+                    search "{clean_name}"; 
+                    fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating,
+                    involved_companies.developer, involved_companies.company.name;
+                    where platforms = ({platform_id});
+                    limit 1;
+                '''
+                data = self._api_call(query)
 
         if not data:
             self.logger.warn(f"Metadados não encontrados para: {game_name}")
@@ -81,14 +90,12 @@ class MetadataManager:
         if 'summary' in game:
             try:
                 game['summary'] = translator.translate(game['summary'])
-            except:
-                pass
+            except: pass
         
         if 'genres' in game:
             for g in game['genres']:
                 try:
                     g['name'] = translator.translate(g['name'])
-                except:
-                    pass
+                except: pass
         
         return game

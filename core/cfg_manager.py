@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
+import re
 
 class CFGManager:
     def __init__(self, root_path, logger):
@@ -20,10 +21,21 @@ class CFGManager:
         if not timestamp: return "Desconhecido"
         return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y")
 
+    def _get_players_info(self, metadata):
+        """Analisa os modos de jogo para definir a quantidade de jogadores."""
+        modes = [m['name'] for m in metadata.get('game_modes', [])]
+        multiplayer_terms = ['Multiplayer', 'Co-operative', 'Split screen']
+        if any(term in modes for term in multiplayer_terms):
+            return "2", "2"
+        return "1", "1"
+
     def generate_cfg(self, item, metadata=None):
-        target_path = os.path.join(self.cfg_dir, item['cfg_target'])        
+        target_path = os.path.join(self.cfg_dir, item['cfg_target'])
         m = metadata if metadata else {}
-        title_display = item['file_name'].split('.')[0]
+        name_clean = Path(item['file_name']).stem
+        display_title = re.sub(r'^[A-Z]{4}[_-][0-9]{3}\.[0-9]{2}\.', '', name_clean)
+        base_title = display_title if display_title else m.get('name', name_clean)
+        title = f"{base_title}{item.get('disc_suffix', '')}"
         desc = m.get('summary', 'Gerado por PS2 AIO Tools.')
         if len(desc) > 252: desc = desc[:252] + "..."
         developer = "Desconhecido"
@@ -37,14 +49,14 @@ class CFGManager:
         genres_list = m.get('genres', [])
         genre = " / ".join([g['name'] for g in genres_list]) if genres_list else "Desconhecido"
         rating_val = self._convert_rating(metadata)
-        players_val = "1"
+        players_val, players_text = self._get_players_info(m)
 
         content = [
             "CfgVersion=8",
             "$ConfigSource=1",
-            f"Title={title_display}",
+            f"Title={title}",
             f"Players=players/{players_val}",
-            f"PlayersText={players_val}",
+            f"PlayersText={players_text}",
             f"Genre={genre}",
             f"Release={release_date}",
             f"Developer={developer}",

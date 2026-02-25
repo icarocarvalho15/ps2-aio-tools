@@ -1,7 +1,7 @@
 from pathlib import Path
 
 class OPLValidator:
-    REQUIRED_FOLDERS = ["DVD", "CD", "CFG", "POPS", "APPS", "ART", "VMC"]
+    REQUIRED_FOLDERS = ["APPS", "ART", "CD", "CFG", "CHT", "DVD", "LNG", "POPS", "THM", "VCD", "VMC"]
 
     def __init__(self, root_path, logger):
         self.root = Path(root_path)

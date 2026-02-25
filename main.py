@@ -10,6 +10,7 @@ from core.cfg_manager import CFGManager
 def main():
     parser = argparse.ArgumentParser(description="PS2 AIO Tools - DravDev")
     parser.add_argument("--root", required=True, help="Raiz do USB")
+    parser.add_argument("--scan-only", action="store_true", help="Apenas escaneia e exibe os resultados")
     parser.add_argument("--full", action="store_true", help="Executa todo o fluxo de automação")
     parser.add_argument("--keep-id", action="store_true", help="Mantém ID no rename")
     
@@ -22,6 +23,9 @@ def main():
 
     logger.info("Escaneando arquivos...")
     items = scan_all(args.root, logger)
+    
+    for item in items:
+        print(f"-> Encontrado: {item['file_name']} | Tipo: {item['type']} | ID: {item['game_id']}")
 
     if args.full:
         metadata_tool = MetadataManager(logger)
@@ -37,7 +41,7 @@ def main():
             if item['type'] == "PS2" and item['game_id']:
                 item['cfg_target'] = f"{item['game_id'].replace('-', '_')}.cfg"
             elif item['type'] == "PS1":
-                item['cfg_target'] = f"{nome_sem_ext}.VCD.ELF.cfg"
+                item['cfg_target'] = f"XX.{nome_sem_ext}.ELF.cfg"
             else:
                 item['cfg_target'] = f"{nome_sem_ext}.cfg"
 
@@ -47,7 +51,7 @@ def main():
                 logger.skip(f"CFG já existe para: {nome_sem_ext}")
                 continue
 
-            data = metadata_tool.fetch_game_data(nome_sem_ext, item['type'])
+            data = metadata_tool.fetch_game_data(nome_sem_ext, item['type'], item['game_id'])
             cfg_tool.generate_cfg(item, data)
 
     logger.ok(f"Processamento concluído para {len(items)} itens.")

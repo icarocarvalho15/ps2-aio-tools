@@ -30,19 +30,24 @@ def execute_rename(item, keep_id, logger):
     ext = old_path.suffix.lower()
 
     if item['type'] == "PS2" and keep_id and item['game_id']:
-        new_name = f"{item['game_id']}.{clean}{ext}"
+        formatted_id = item['game_id'].replace('-', '_')
+        new_name = f"{formatted_id}.{clean}{ext}"
     else:
         new_name = f"{clean}{ext}"
 
     new_path = old_path.parent / new_name
-    if old_path == new_path: return str(old_path)
+
+    if old_path == new_path:
+        return str(old_path)
 
     try:
         if not new_path.exists():
             old_path.rename(new_path)
             logger.ok(f"Renomeado: {new_name}")
             return str(new_path)
-        logger.warn(f"Ignorado (já existe): {new_name}")
+        else:
+            logger.warn(f"Ignorado (já existe): {new_name}")
+            return str(new_path)
     except Exception as e:
         logger.error(f"Erro no rename: {e}")
-    return str(old_path)
+        return str(old_path)
