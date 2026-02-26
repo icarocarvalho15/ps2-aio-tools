@@ -27,3 +27,7 @@ class Logger:
     def skip(self, msg):
         print(f"[SKIP] {msg}")
         logging.info(f"PULADO: {msg}")
+
+    def warn(self, msg):
+        print(f"[AVISO] {msg}")
+        logging.warning(msg)

@@ -51,52 +51,49 @@ class MetadataManager:
 
     def fetch_game_data(self, game_name, game_type, game_id=None):
         cached_data = self.cache.get_game(game_id, game_name)
-        if cached_data:
-            return cached_data
+        if cached_data: return cached_data
 
         if not self.access_token: return None
         
         game_name_clean = re.sub(r'\b(Disc|CD|Disk|Disco)\s*[1-4]\b', '', game_name, flags=re.IGNORECASE).strip()
-        
         platform_id = 8 if game_type == "PS2" else 7
+        
+        fields = "fields name, summary, first_release_date, genres.name, rating, total_rating, involved_companies.company.name;"
         data = None
 
         if game_id:
-            variants = [game_id, game_id.replace('-', ''), game_id.replace('.', '').replace('-', '')]
+            id_numeric = re.sub(r'[^0-9]', '', game_id)
+            variants = [game_id, game_id.replace('-', ''), id_numeric]
+            
             for vid in variants:
-                query = f'fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating, involved_companies.developer, involved_companies.company.name; where external_games.uid = "{vid}" & platforms = ({platform_id}); limit 1;'
+                if not vid or len(vid) < 3: continue 
+                query = f'{fields} where external_games.uid = "{vid}" & platforms = ({platform_id}); limit 1;'
                 data = self._api_call(query)
                 if data: break
 
         if not data:
-            clean_search = re.sub(r'^[A-Z]{3,4}[_-][0-9]{3}\.[0-9]{2}\.', '', game_name_clean)
-            query = f'search "{clean_search}"; fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating, involved_companies.developer, involved_companies.company.name; where platforms = ({platform_id}); limit 1;'
+            clean_search = re.sub(r'[^a-zA-Z0-9\s]', '', game_name_clean)
+            query = f'search "{clean_search}"; {fields} where platforms = ({platform_id}); limit 1;'
             data = self._api_call(query)
 
         if not data:
-            clean_name = re.sub(r'\b(definitive edition|special edition|pt br|patch|patched|v\d+|hacked|mod|modded)\b', '', game_name_clean, flags=re.IGNORECASE).strip()
+            clean_name = re.sub(r'\b(definitive edition|special edition|pt br|patch|patched|v\d+|hacked|mod|modded|fix)\b', '', game_name_clean, flags=re.IGNORECASE).strip()
             if clean_name != game_name_clean:
-                query = f'''
-                    search "{clean_name}"; 
-                    fields name, summary, first_release_date, genres.name, game_modes.name, rating, total_rating,
-                    involved_companies.developer, involved_companies.company.name;
-                    where platforms = ({platform_id});
-                    limit 1;
-                '''
+                query = f'search "{clean_name}"; {fields} where platforms = ({platform_id}); limit 1;'
                 data = self._api_call(query)
 
-        if not data:
+        if not data or len(data) == 0:
             self.logger.warn(f"Metadados não encontrados para: {game_name}")
             return None
         
         game = data[0]
-        
         translator = GoogleTranslator(source='en', target='pt')
         
-        if 'summary' in game:
-            try:
-                game['summary'] = translator.translate(game['summary'])
-            except: pass
+        for key in ['summary']:
+            if key in game and game[key]:
+                try:
+                    game[key] = translator.translate(game[key])
+                except: pass
         
         if 'genres' in game:
             for g in game['genres']:

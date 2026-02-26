@@ -29,7 +29,7 @@ class POPSManager:
         global_cheat = self.pops_dir / "CHEATS.TXT"
         if not global_cheat.exists():
             with open(global_cheat, "w", encoding="utf-8") as f:
-                f.write("// Arquivo Global de Cheats POPS\n")
+                f.write("// Códigos padrão POPStarter\n")
                 f.write("\n".join(self.default_cheats))
             self.logger.info("CHEATS.TXT global criado com códigos padrão.")
 
@@ -66,8 +66,9 @@ class POPSManager:
                 shutil.copy2(base, target)
                 created = True
             else:
-                self.logger.warn(f"VMC base {name} não encontrado na raiz /POPS. Criando arquivo vazio.")
-                target.touch()
+                self.logger.warn(f"VMC base {name} não encontrado. Gerando VMC de 1MB...")
+                with open(target, "wb") as f:
+                    f.write(b'\x00' * (1 * 1024 * 1024 + 64))
                 created = True
         if created:
             self.logger.info(f"VMCs configurados em: {game_folder.name}")
@@ -97,7 +98,7 @@ class POPSManager:
             return
         try:
             with open(cheat_file, "w", encoding="utf-8") as f:
-                f.write("// Códigos padrão DravDev\n")
+                f.write("// Códigos padrão POPStarter\n")
                 f.write("\n".join(self.default_cheats))
             self.logger.info(f"CHEATS.TXT criado em: {game_folder.name}")
         except Exception as e:

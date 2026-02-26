@@ -55,6 +55,13 @@ def main():
         else:
             nome_sem_ext = Path(item['full_path']).stem
 
+        if item['type'] == "PS2" and item['game_id']:
+            item['cfg_target'] = f"{item['game_id'].replace('-', '_')}.cfg"
+        elif item['type'] == "PS1":
+            item['cfg_target'] = f"XX.{nome_sem_ext}.ELF.cfg"
+        else:
+            item['cfg_target'] = f"{nome_sem_ext}.cfg"
+
         if do_pops and item['type'] == "PS1":
             pops_tool.setup_game(item, items)
 
@@ -64,7 +71,7 @@ def main():
                 data = metadata_tool.fetch_game_data(nome_sem_ext, item['type'], item['game_id'])
                 cfg_tool.generate_cfg(item, data)
             else:
-                logger.skip(f"CFG já existe para: {nome_sem_ext}")
+                logger.skip(f"CFG já existe para: {item['cfg_target']}")
 
     if pops_tool:
         pops_tool.update_apps_config(items)

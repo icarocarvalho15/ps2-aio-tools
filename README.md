@@ -59,14 +59,14 @@ IGDB_CLIENT_SECRET=seu_client_secret_aqui
 
 ### 5. Uso via Terminal (CLI)
 A ferramenta é modular. Você pode rodar o fluxo completo ou apenas tarefas específicas:
-Parâmetro	Função
---root "X:\"	Define a letra da unidade do USB/HD (Obrigatório).
---scan-only	Apenas lista os jogos encontrados, sem fazer alterações.
---rename	Renomeia os arquivos para nomes limpos e padronizados.
---pops	Executa o setup completo de PS1 (VMCs, Patches, Apps Config).
---metadata	Busca informações na API e gera os arquivos .cfg.
---full	Executa Rename + POPS + Metadata de uma só vez.
---keep-id	Mantém o Game ID no nome do arquivo (Ex: SLUS_212.03.Game.iso).
+Parâmetro,Função
+"--root ""X:\""",Define a letra da unidade do USB/HD (Obrigatório).
+--scan-only,"Apenas lista os jogos encontrados, sem fazer alterações."
+--rename,Renomeia os arquivos para nomes limpos e padronizados.
+--pops,"Executa o setup completo de PS1 (VMCs, Patches, Apps Config)."
+--metadata,Busca informações na API e gera os arquivos .cfg.
+--full,Executa Rename + POPS + Metadata de uma só vez.
+--keep-id,Mantém o Game ID no nome do arquivo (Ex: SLUS_212.03.Game.iso).
 
 Exemplo de uso completo:
 ```bash

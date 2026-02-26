@@ -33,9 +33,11 @@ class CFGManager:
         target_path = os.path.join(self.cfg_dir, item['cfg_target'])
         m = metadata if metadata else {}
         name_clean = Path(item['file_name']).stem
-        display_title = re.sub(r'^[A-Z]{4}[_-][0-9]{3}\.[0-9]{2}\.', '', name_clean)
-        base_title = display_title if display_title else m.get('name', name_clean)
-        title = f"{base_title}{item.get('disc_suffix', '')}"
+        display_title = re.sub(r'^[A-Z]{3,4}[_-][0-9]{3}\.[0-9]{2}\.', '', name_clean)
+        display_title = re.sub(r'^XX\.', '', display_title)
+        display_title = re.sub(r'\b(Disc|CD|Disk|Disco)\s*[1-4]\b', '', display_title, flags=re.IGNORECASE).strip()
+        base_title = m.get('name', display_title)
+        title = base_title
         desc = m.get('summary', 'Gerado por PS2 AIO Tools.')
         if len(desc) > 252: desc = desc[:252] + "..."
         developer = "Desconhecido"
