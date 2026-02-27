@@ -20,11 +20,14 @@ class CacheManager:
         return {}
 
     def get_game(self, game_id, game_name):
-        """Tenta buscar o jogo no cache pelo ID ou pelo Nome."""
+        """Tenta buscar no cache e garante que os dados sejam válidos."""
+        data = None
         if game_id and game_id in self.cache:
-            return self.cache[game_id]
-        if game_name in self.cache:
-            return self.cache[game_name]
+            data = self.cache[game_id]
+        elif game_name in self.cache:
+            data = self.cache[game_name]
+        if data and isinstance(data, dict) and len(data) > 0:
+            return data
         return None
 
     def save_game(self, key, data):
