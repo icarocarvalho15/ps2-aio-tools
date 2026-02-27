@@ -74,6 +74,6 @@ class CFGManager:
         try:
             with open(target_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(content))
-            self.logger.ok(f"CFG Gerado: {item['cfg_target']}")
+            self.logger.ok(f"CFG gerado do {title}: {item['cfg_target']}")
         except Exception as e:
-            self.logger.error(f"Erro ao salvar CFG: {e}")
+            self.logger.error(f"Erro ao salvar CFG do {title}: {e}")
