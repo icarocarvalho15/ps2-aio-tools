@@ -30,7 +30,8 @@ class MetadataManager:
             "SLUS_261.63": {"name": "Anime Hero Zero 3", "summary": "Anime Hero Zero 3 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
             "SLUS_416.34": {"name": "Anime Hero Zero ODLVE", "summary": "Anime Hero Zero ODLVE é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo pode ser considerada uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
             "SLPS_255.05": {"name": "Namco x Capcom", "summary": "RPG de estratégia crossover desenvolvido pela Monolith Soft.", "genres": [{"name": "RPG"}]},
-            "SLUS_210.10": {"name": "Nanobreaker", "summary": "Jogo de ação hack and slash da Konami.", "genres": [{"name": "Ação"}]}
+            "SLUS_210.10": {"name": "Nanobreaker", "summary": "Jogo de ação hack and slash da Konami.", "genres": [{"name": "Ação"}]},
+            "SLUS_209.46": {"name": "Grand Theft Auto: San Andreas", "summary": "Grand Theft Auto: San Andreas é um jogo eletrônico de ação-aventura desenvolvido pela Rockstar North e publicado pela Rockstar Games. A jogabilidade central consiste em elementos de jogos de corrida e tiro em terceira pessoa.", "genres": [{"name": "Ação"}]}
         }
 
     def _get_access_token(self):
@@ -70,7 +71,7 @@ class MetadataManager:
         except Exception as e:
             self.logger.error(f"Erro de conexão: {e}")
             return None
-    
+
     def fetch_game_data(self, game_name, game_type, game_id=None):
         cached_data = self.cache.get_game(game_id, game_name)
         if cached_data: return cached_data
@@ -104,10 +105,18 @@ class MetadataManager:
             data = self._api_call(f'search "{name_only}"; {fields} limit 1;')
 
         if not data or len(data) == 0:
-            self.logger.warn(f"Metadados não encontrados após 4 tentativas: {game_name}")
+            self.logger.warn(f"Metadados não encontrados: {game_name}")
             return None
         
-        game = data[0]
+        best_match = data[0]
+        if len(data) > 1:
+            for candidate in data:
+                c_name = candidate['name'].lower()
+                if not any(x in c_name for x in ['mod', 'append', 'edition', 'bundle', 'collection', 'version']):
+                    best_match = candidate
+                    break
+        
+        game = best_match
 
         try:
             translator = GoogleTranslator(source='en', target='pt')
