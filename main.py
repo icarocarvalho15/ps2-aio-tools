@@ -18,16 +18,22 @@ def main():
     parser.add_argument("--pops", action="store_true", help="Apenas setup de PS1 (VMCs, Patches, TXTs)")
     parser.add_argument("--metadata", action="store_true", help="Apenas gera os arquivos CFG")
     parser.add_argument("--keep-id", action="store_true", help="Mantém ID no rename (PS2)")
+    parser.add_argument("--filter", help="Filtra o scan por um nome específico (ex: --filter 'Black')")
     
     args = parser.parse_args()
     logger = Logger()
 
     validator = OPLValidator(args.root, logger)
     if not validator.validate_root(): return
-    validator.validate_structure()
+    validator.validate_structure(silent=True)
 
     logger.info("Escaneando arquivos no diretório...")
     items = scan_all(args.root, logger)
+    
+    if args.filter:
+        original_count = len(items)
+        items = [i for i in items if args.filter.lower() in i['file_name'].lower()]
+        logger.info(f"Filtro aplicado: '{args.filter}'. Itens filtrados: {len(items)} de {original_count}")
     
     if args.scan_only:
         for item in items:
@@ -69,8 +75,8 @@ def main():
 
         if do_metadata:
             cfg_full_path = Path(args.root) / "CFG" / item['cfg_target']
-            
-            if not cfg_full_path.exists():
+
+            if not cfg_full_path.exists() or args.filter:
                 data = metadata_tool.fetch_game_data(nome_sem_ext, item['type'], item['game_id'])
                 cfg_tool.generate_cfg(item, data)
             else:

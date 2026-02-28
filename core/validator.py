@@ -19,17 +19,19 @@ class OPLValidator:
         self.logger.ok("Dispositivo/Diretório root validado")
         return True
 
-    def validate_structure(self):
+    def validate_structure(self, silent=True):
         """Verifica e cria a estrutura de pastas necessária para o OPL."""
-        self.logger.info("Validando estrutura de pastas OPL...")
+        if not silent:
+            self.logger.info("Validando estrutura de pastas OPL...")
+            
         for folder in self.REQUIRED_FOLDERS:
             path = self.root / folder
 
             if path.exists():
-                if path.is_dir():
-                    self.logger.skip(f"Estrutura confirmada: {folder}/")
-                else:
+                if not path.is_dir():
                     self.logger.warn(f"Conflito: {folder} existe mas não é uma pasta!")
+                elif not silent:
+                    self.logger.skip(f"Estrutura confirmada: {folder}/")
             else:
                 try:
                     path.mkdir(parents=True, exist_ok=True)

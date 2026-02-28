@@ -2,6 +2,7 @@ import os
 import re
 import requests
 from dotenv import load_dotenv
+from datetime import datetime
 from deep_translator import GoogleTranslator
 from core.cache_manager import CacheManager
 
@@ -9,11 +10,11 @@ load_dotenv()
 
 class MetadataManager:
     def __init__(self, logger):
-        self.client_id = os.getenv("IGDB_CLIENT_ID")
-        self.client_secret = os.getenv("IGDB_CLIENT_SECRET")
+        self.api_key = os.getenv("THEGAMESDB_API_KEY")
+        self.base_url = "https://api.thegamesdb.net/v1/"
         self.logger = logger
         self.cache = CacheManager(logger)
-        self.access_token = self._get_access_token()
+        
         self.manual_db = {
             "SLPM_663.74": {"name": "Bomba Patch 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genres": [{"name": "Esporte"}]},
             "SLES_556.73": {"name": "PES 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genres": [{"name": "Esporte"}]},
@@ -30,104 +31,117 @@ class MetadataManager:
             "SLUS_261.63": {"name": "Anime Hero Zero 3", "summary": "Anime Hero Zero 3 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
             "SLUS_416.34": {"name": "Anime Hero Zero ODLVE", "summary": "Anime Hero Zero ODLVE é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo pode ser considerada uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
             "SLPS_255.05": {"name": "Namco x Capcom", "summary": "RPG de estratégia crossover desenvolvido pela Monolith Soft.", "genres": [{"name": "RPG"}]},
-            "SLUS_210.10": {"name": "Nanobreaker", "summary": "Jogo de ação hack and slash da Konami.", "genres": [{"name": "Ação"}]},
-            "SLUS_209.46": {"name": "Grand Theft Auto: San Andreas", "summary": "Grand Theft Auto: San Andreas é um jogo eletrônico de ação-aventura desenvolvido pela Rockstar North e publicado pela Rockstar Games. A jogabilidade central consiste em elementos de jogos de corrida e tiro em terceira pessoa.", "genres": [{"name": "Ação"}]}
         }
 
-    def _get_access_token(self):
-        url = "https://id.twitch.tv/oauth2/token"
-        params = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "grant_type": "client_credentials"
-        }
-        try:
-            response = requests.post(url, params=params)
-            if response.status_code != 200:
-                self.logger.error(f"Erro ao gerar Token: {response.status_code} - {response.text}")
-                return None
-            token = response.json().get("access_token")
-            return token
-        except Exception as e:
-            self.logger.error(f"Erro de conexão na autenticação: {e}")
-            return None
+        self.dev_map = {}
+        self.genre_map = {}
+        self._load_maps()
 
-    def _api_call(self, query):
-        """Força a query a ser uma string limpa e sem quebras de linha estranhas."""
-        url = "https://api.igdb.com/v4/games"
-        headers = {
-            "Client-ID": self.client_id,
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "text/plain"
-        }
-        clean_query = " ".join(query.split())
+    def _load_maps(self):
+        """Sincroniza os dicionários de IDs da API TheGamesDB."""
         try:
-            response = requests.post(url, headers=headers, data=clean_query.encode('utf-8'))
-            if response.status_code == 200:
-                return response.json()
-            else:
-                self.logger.error(f"Erro IGDB {response.status_code}: {response.text}")
-                return None
-        except Exception as e:
-            self.logger.error(f"Erro de conexão: {e}")
-            return None
+            r_gen = requests.get(f"{self.base_url}Genres", params={"apikey": self.api_key}, timeout=10)
+            if r_gen.status_code == 200:
+                data = r_gen.json().get('data', {}).get('genres', {})
+                self.genre_map = {str(k): v['name'] for k, v in data.items()}
+
+            r_dev = requests.get(f"{self.base_url}Developers", params={"apikey": self.api_key}, timeout=10)
+            if r_dev.status_code == 200:
+                data = r_dev.json().get('data', {}).get('developers', {})
+                self.dev_map = {str(k): v['name'] for k, v in data.items()}
+        except:
+            self.logger.warn("Aviso: Não foi possível sincronizar mapas de IDs da API.")
 
     def fetch_game_data(self, game_name, game_type, game_id=None):
-        cached_data = self.cache.get_game(game_id, game_name)
-        if cached_data: return cached_data
-
         if game_id and game_id in self.manual_db:
-            manual_game = self.manual_db[game_id]
-            self.cache.save_game(game_id, manual_game)
-            return manual_game
+            m = self.manual_db[game_id]
+            return {
+                "name": m['name'], "summary": m['summary'], "genre": m['genre'],
+                "release_date": "Desconhecido", "rating": "5", "players": "1", "developer": "Custom"
+            }
 
-        if not self.access_token: return None
-        
-        platform_id = 8 if game_type == "PS2" else 7
-        fields = "fields name, summary, first_release_date, genres.name, rating, total_rating, involved_companies.company.name;"
-        
-        name_only = re.sub(r'\(.*?\)|\[.*?\]', '', game_name).strip()
-        name_clean = re.sub(r'[^a-zA-Z0-9\s]', ' ', name_only).strip()
-        
-        data = None
+        cached = self.cache.get_game(game_id, game_name)
+        if cached: return cached
 
-        if game_id:
-            id_raw = re.sub(r'[^a-zA-Z0-9]', '', game_id)
-            data = self._api_call(f'search "{id_raw}"; {fields} where platforms = {platform_id};')
+        platform_id = 11 if game_type == "PS2" else 10
+        clean_search = re.sub(r'\(.*?\)|\[.*?\]', '', game_name).strip()
 
-        if not data:
-            data = self._api_call(f'search "{name_clean}"; {fields} where platforms = {platform_id}; limit 1;')
-
-        if not data:
-            data = self._api_call(f'search "{name_clean}"; {fields} limit 1;')
-
-        if not data:
-            data = self._api_call(f'search "{name_only}"; {fields} limit 1;')
-
-        if not data or len(data) == 0:
-            self.logger.warn(f"Metadados não encontrados: {game_name}")
-            return None
-        
-        best_match = data[0]
-        if len(data) > 1:
-            for candidate in data:
-                c_name = candidate['name'].lower()
-                if not any(x in c_name for x in ['mod', 'append', 'edition', 'bundle', 'collection', 'version']):
-                    best_match = candidate
-                    break
-        
-        game = best_match
+        params = {
+            "apikey": self.api_key, 
+            "name": clean_search, 
+            "filter[platform]": platform_id,
+            "include": "developers,genres", 
+            "fields": "overview,release_date,rating,players,developers,genres"
+        }
 
         try:
-            translator = GoogleTranslator(source='en', target='pt')
-            if 'summary' in game and game['summary']:
-                game['summary'] = translator.translate(game['summary'][:4000])
-            if 'genres' in game:
-                for g in game['genres']:
-                    g['name'] = translator.translate(g['name'])
-        except: pass
+            response = requests.get(f"{self.base_url}Games/ByGameName", params=params, timeout=15)
+            res = response.json()
 
-        if game_id: self.cache.save_game(game_id, game)
-        self.cache.save_game(game_name, game)
-        
-        return game
+            if res.get('code') == 200 and res['data']['count'] > 0:
+                games = res['data']['games']
+                include_data = res.get('include', {})
+
+                valid_with_desc = [g for g in games if g.get('overview') and len(g.get('overview')) > 10]
+                
+                if valid_with_desc:
+                    game = min(valid_with_desc, key=lambda x: len(x['game_title']))
+                else:
+                    game = min(games, key=lambda x: len(x['game_title']))
+
+                display_name = game['game_title']
+                display_name = re.sub(r'\(.*?\)|\[.*?\]', '', display_name).strip()
+
+                genre_list = []
+                genre_ids = game.get('genres', []) or []
+                genre_trans = {
+                    "Action": "Ação", "Adventure": "Aventura", "Horror": "Terror",
+                    "Shooter": "Tiro", "Racing": "Corrida", "Sports": "Esportes",
+                    "Role-playing (RPG)": "RPG", "Fighting": "Luta", "Platform": "Plataforma"
+                }
+                
+                for g_id in genre_ids:
+                    g_id_str = str(g_id)
+                    name = include_data.get('genres', {}).get(g_id_str, {}).get('name') or self.genre_map.get(g_id_str)
+                    if name: genre_list.append(genre_trans.get(name, name))
+                
+                genre_final = " / ".join(genre_list) if genre_list else "Ação"
+
+                raw_ov = game.get('overview', '')
+                desc = "Gerado por PS2 AIO Tools."
+                if raw_ov:
+                    try:
+                        translated = GoogleTranslator(source='auto', target='pt').translate(raw_ov[:1000])
+                        clean_text = re.sub(r'[\r\n\t]+', ' ', translated)
+                        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+                        desc = (clean_text[:252].rstrip() + "...") if len(clean_text) > 255 else clean_text
+                    except:
+                        desc = raw_ov[:252] + "..."
+
+                date_fmt = "Desconhecido"
+                if game.get('release_date'):
+                    try: 
+                        date_fmt = datetime.strptime(game['release_date'].split(' ')[0], '%Y-%m-%d').strftime('%d/%m/%Y')
+                    except: 
+                        date_fmt = game['release_date']
+
+                dev_id = str(game.get('developers', [0])[0])
+                developer = include_data.get('developers', {}).get(dev_id, {}).get('name') or self.dev_map.get(dev_id, "Desconhecido")
+
+                processed = {
+                    "name": display_name,
+                    "summary": desc,
+                    "release_date": date_fmt,
+                    "rating": "4",
+                    "players": str(game.get('players', '1')),
+                    "developer": developer,
+                    "genre": genre_final
+                }
+                
+                self.cache.save_game(game_id if game_id else game_name, processed)
+                return processed
+
+        except Exception as e:
+            self.logger.error(f"Erro no processamento de {game_name}: {e}")
+            
+        return None
