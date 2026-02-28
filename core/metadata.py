@@ -55,9 +55,19 @@ class MetadataManager:
     def fetch_game_data(self, game_name, game_type, game_id=None):
         if game_id and game_id in self.manual_db:
             m = self.manual_db[game_id]
+            raw_genre = m.get('genre') or m.get('genres')
+            if isinstance(raw_genre, list) and len(raw_genre) > 0:
+                final_genre = raw_genre[0].get('name', 'Outros')
+            else:
+                final_genre = str(raw_genre) if raw_genre else "Outros"
             return {
-                "name": m['name'], "summary": m['summary'], "genre": m['genre'],
-                "release_date": "Desconhecido", "rating": "5", "players": "1", "developer": "Custom"
+                "name": m.get('name', game_name),
+                "summary": m.get('summary', 'Sem descrição.'),
+                "genre": final_genre,
+                "release_date": "Desconhecido",
+                "rating": "5",
+                "players": "1",
+                "developer": "Custom/Mod"
             }
 
         cached = self.cache.get_game(game_id, game_name)
