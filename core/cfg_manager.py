@@ -12,7 +12,7 @@ class CFGManager:
         cfg_path = self.cfg_dir / item['cfg_target']
         
         p = metadata.get('players', '1')
-        r = metadata.get('rating', '3')
+        r = metadata.get('rating', '5')
 
         content = [
             "CfgVersion=8",
@@ -20,7 +20,7 @@ class CFGManager:
             f"Title={metadata.get('name', item['file_name'])}",
             f"Players=players/{p}",
             f"PlayersText={p}",
-            f"Genre={metadata.get('genre', 'Desconhecido')}",
+            f"Genre={metadata.get('genre', 'Outros')}",
             f"Release={metadata.get('release_date', 'Desconhecido')}",
             f"Developer={metadata.get('developer', 'Desconhecido')}",
             f"Rating=rating/{r}",

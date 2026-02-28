@@ -66,7 +66,7 @@ THEGAMESDB_API_KEY=sua_chave_aqui
 A ferramenta é modular. Você pode rodar o fluxo completo ou apenas tarefas específicas:
 ```bash
 Parâmetro   Função
---root 'X:\'    Define a letra da unidade do USB/HD (Obrigatório).
+--root "X:\"    Define a letra da unidade do USB/HD (Obrigatório).
 --scan-only    Apenas lista os jogos encontrados, sem fazer alterações.
 --rename    Renomeia os arquivos para nomes limpos e padronizados.
 --pops    Executa o setup completo de PS1 (VMCs, Patches, Apps Config).
@@ -78,9 +78,9 @@ Parâmetro   Função
 
 Exemplo de uso:
 ```bash
-python main.py --root 'D:\' --full --keep-id
+python main.py --root "D:\" --full --keep-id
 # Ou
-python main.py --root 'D:\' --pops
+python main.py --root "D:\" --pops
 ```
 
 ## 📂 Estrutura do Projeto

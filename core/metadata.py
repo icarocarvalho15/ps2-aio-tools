@@ -55,103 +55,99 @@ class MetadataManager:
     def fetch_game_data(self, game_name, game_type, game_id=None):
         if game_id and game_id in self.manual_db:
             m = self.manual_db[game_id]
-            raw_genre = m.get('genre') or m.get('genres')
-            if isinstance(raw_genre, list) and len(raw_genre) > 0:
-                final_genre = raw_genre[0].get('name', 'Outros')
-            else:
-                final_genre = str(raw_genre) if raw_genre else "Outros"
-            return {
-                "name": m.get('name', game_name),
-                "summary": m.get('summary', 'Sem descrição.'),
-                "genre": final_genre,
-                "release_date": "Desconhecido",
-                "rating": "5",
-                "players": "1",
-                "developer": "Custom/Mod"
-            }
-
+            return {"name": m['name'], "summary": m['summary'], "genre": m.get('genre', 'Ação'), 
+                    "release_date": "Desconhecido", "rating": "5", "players": "1", "developer": "Custom"}
+        
         cached = self.cache.get_game(game_id, game_name)
         if cached: return cached
 
+        search_term = re.sub(r'\(.*?\)|\[.*?\]', '', game_name)
+        search_term = re.sub(r'(?i)\b(Disc|Disco|CD|Disk|Part|PDC|DVD|Leon|Claire)\s*[0-9]*\b', '', search_term).strip()
+        
         platform_id = 11 if game_type == "PS2" else 10
-        clean_search = re.sub(r'\(.*?\)|\[.*?\]', '', game_name).strip()
-
-        params = {
-            "apikey": self.api_key, 
-            "name": clean_search, 
-            "filter[platform]": platform_id,
-            "include": "developers,genres", 
-            "fields": "overview,release_date,rating,players,developers,genres"
-        }
+        games = []
+        include_data = {}
 
         try:
-            response = requests.get(f"{self.base_url}Games/ByGameName", params=params, timeout=15)
-            res = response.json()
-
-            if res.get('code') == 200 and res['data']['count'] > 0:
+            params = {
+                "apikey": self.api_key,
+                "name": search_term,
+                "filter[platform]": platform_id,
+                "include": "developers,genres",
+                "fields": "overview,release_date,rating,players,developers,genres"
+            }
+            r = requests.get(f"{self.base_url}Games/ByGameName", params=params, timeout=15)
+            res = r.json()
+            if res.get('code') == 200:
                 games = res['data']['games']
                 include_data = res.get('include', {})
+        except: pass
 
-                valid_with_desc = [g for g in games if g.get('overview') and len(g.get('overview')) > 10]
-                
-                if valid_with_desc:
-                    game = min(valid_with_desc, key=lambda x: len(x['game_title']))
-                else:
-                    game = min(games, key=lambda x: len(x['game_title']))
+        if not games: return None
 
-                display_name = game['game_title']
-                display_name = re.sub(r'\(.*?\)|\[.*?\]', '', display_name).strip()
-
-                genre_list = []
-                genre_ids = game.get('genres', []) or []
-                genre_trans = {
-                    "Action": "Ação", "Adventure": "Aventura", "Horror": "Terror",
-                    "Shooter": "Tiro", "Racing": "Corrida", "Sports": "Esportes",
-                    "Role-playing (RPG)": "RPG", "Fighting": "Luta", "Platform": "Plataforma"
-                }
-                
-                for g_id in genre_ids:
-                    g_id_str = str(g_id)
-                    name = include_data.get('genres', {}).get(g_id_str, {}).get('name') or self.genre_map.get(g_id_str)
-                    if name: genre_list.append(genre_trans.get(name, name))
-                
-                genre_final = " / ".join(genre_list) if genre_list else "Ação"
-
-                raw_ov = game.get('overview', '')
-                desc = "Gerado por PS2 AIO Tools."
-                if raw_ov:
-                    try:
-                        translated = GoogleTranslator(source='auto', target='pt').translate(raw_ov[:1000])
-                        clean_text = re.sub(r'[\r\n\t]+', ' ', translated)
-                        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
-                        desc = (clean_text[:252].rstrip() + "...") if len(clean_text) > 255 else clean_text
-                    except:
-                        desc = raw_ov[:252] + "..."
-
-                date_fmt = "Desconhecido"
-                if game.get('release_date'):
-                    try: 
-                        date_fmt = datetime.strptime(game['release_date'].split(' ')[0], '%Y-%m-%d').strftime('%d/%m/%Y')
-                    except: 
-                        date_fmt = game['release_date']
-
-                dev_id = str(game.get('developers', [0])[0])
-                developer = include_data.get('developers', {}).get(dev_id, {}).get('name') or self.dev_map.get(dev_id, "Desconhecido")
-
-                processed = {
-                    "name": display_name,
-                    "summary": desc,
-                    "release_date": date_fmt,
-                    "rating": "4",
-                    "players": str(game.get('players', '1')),
-                    "developer": developer,
-                    "genre": genre_final
-                }
-                
-                self.cache.save_game(game_id if game_id else game_name, processed)
-                return processed
-
-        except Exception as e:
-            self.logger.error(f"Erro no processamento de {game_name}: {e}")
+        best_match = None
+        for g in games:
+            api_title = g['game_title'].lower()
+            has_digit_search = any(char.isdigit() for char in search_term)
+            has_digit_api = any(char.isdigit() for char in api_title)
             
-        return None
+            if has_digit_search and not has_digit_api: continue
+            
+            if search_term.lower() in api_title:
+                best_match = g
+                break
+
+        if not best_match:
+            valid_desc = [g for g in games if g.get('overview')]
+            best_match = valid_desc[0] if valid_desc else games[0]
+
+        game = best_match
+
+        display_name = game['game_title']
+
+        if search_term.lower() not in display_name.lower():
+            display_name = search_term
+
+        raw_ov = game.get('overview', '')
+        desc = "Gerado por PS2 AIO Tools."
+        if raw_ov:
+            try:
+                translated = GoogleTranslator(source='auto', target='pt').translate(raw_ov[:1000])
+                clean_text = re.sub(r'[\r\n\t]+', ' ', translated)
+                clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+                desc = (clean_text[:252].rstrip() + "...") if len(clean_text) > 255 else clean_text
+            except: desc = raw_ov[:252] + "..."
+
+        date_fmt = "Desconhecido"
+        if game.get('release_date'):
+            try: date_fmt = datetime.strptime(game['release_date'].split(' ')[0], '%Y-%m-%d').strftime('%d/%m/%Y')
+            except: date_fmt = game['release_date']
+
+        dev_ids = game.get('developers') or []
+        developer = "Desconhecido"
+        if dev_ids and len(dev_ids) > 0:
+            dev_id = str(dev_ids[0])
+            developer = include_data.get('developers', {}).get(dev_id, {}).get('name') or self.dev_map.get(dev_id, "Desconhecido")
+
+        genre_ids = game.get('genres') or []
+        genre_list = []
+        genre_trans = {
+            "Action": "Ação", "Shooter": "Tiro", "Horror": "Terror", "Adventure": "Aventura", "Family": "Família", "Role-Playing": "RPG",
+            "Fighting": "Luta", "Puzzle": "Quebra-Cabeça", "Stealth": "Camuflagem", "Music": "Música", "Platform": "Plataforma", "Strategy": "Estratégia"
+        }
+        for g_id in genre_ids:
+            g_name = include_data.get('genres', {}).get(str(g_id), {}).get('name') or self.genre_map.get(str(g_id))
+            if g_name: genre_list.append(genre_trans.get(g_name, g_name))
+
+        processed = {
+            "name": display_name,
+            "summary": desc,
+            "release_date": date_fmt,
+            "rating": "5",
+            "players": str(game.get('players', '1')),
+            "developer": developer,
+            "genre": " / ".join(genre_list) if genre_list else "Outros"
+        }
+        
+        self.cache.save_game(game_id if game_id else game_name, processed)
+        return processed
