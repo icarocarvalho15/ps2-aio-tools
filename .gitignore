@@ -8,4 +8,6 @@ __pycache__/
 
 # Logs
 *.log
+
+# Cache
 *.json

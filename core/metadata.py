@@ -16,21 +16,20 @@ class MetadataManager:
         self.cache = CacheManager(logger)
         
         self.manual_db = {
-            "SLPM_663.74": {"name": "Bomba Patch 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genres": [{"name": "Esporte"}]},
-            "SLES_556.73": {"name": "PES 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genres": [{"name": "Esporte"}]},
-            "LITE_000.01": {"name": "Nostalgia Collection", "summary": "Coletânea de clássicos retrô.", "genres": [{"name": "Coletânea"}]},
-            "SLUS_000.00": {"name": "Nostalgia Collection", "summary": "Coletânea de clássicos retrô.", "genres": [{"name": "Coletânea"}]},
-            "SLUS_740.32": {"name": "The King Of Fighters 11 in 1", "summary": "Coletânea de jogos arcade do maior jogo de luta de todos os tempos.", "genres": [{"name": "Coletânea / Luta / Arcade"}]},
-            "SLUS_774.47": {"name": "Anime Hero I", "summary": "Anime Hero I é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime.", "genres": [{"name": "Música"}]},
-            "SLUS_774.48": {"name": "Anime Hero II Evolution", "summary": "Anime Hero II Evolution é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero I.", "genres": [{"name": "Música"}]},
-            "SLUS_222.22": {"name": "Anime Hero III Revolution", "summary": "Anime Hero III Revolution é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero II.", "genres": [{"name": "Música"}]},
-            "SLUS_216.72": {"name": "Anime Hero IV Spirit Burning", "summary": "Anime Hero IV Spirit Burning é um mod não oficial de Guitar Hero III para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero III.", "genres": [{"name": "Música"}]},
-            "SLUS_216.73": {"name": "Anime Hero V Black Edition", "summary": "Anime Hero V Black Edition é um mod não oficial de Guitar Hero III para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero IV.", "genres": [{"name": "Música"}]},
-            "SLUS_215.86": {"name": "Anime Hero Zero", "summary": "Anime Hero Zero é uma versão modificada não oficial de Guitar Hero II para PlayStation 2 que adiciona músicas de anime ao jogo.", "genres": [{"name": "Música"}]},
-            "SLUS_215.87": {"name": "Anime Hero Zero 2", "summary": "Anime Hero Zero 2 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
-            "SLUS_261.63": {"name": "Anime Hero Zero 3", "summary": "Anime Hero Zero 3 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
-            "SLUS_416.34": {"name": "Anime Hero Zero ODLVE", "summary": "Anime Hero Zero ODLVE é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo pode ser considerada uma sequência do Anime Hero Zero.", "genres": [{"name": "Música"}]},
-            "SLPS_255.05": {"name": "Namco x Capcom", "summary": "RPG de estratégia crossover desenvolvido pela Monolith Soft.", "genres": [{"name": "RPG"}]},
+            "SLPM_663.74": {"name": "Bomba Patch 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genre": "Esporte"},
+            "SLES_556.73": {"name": "PES 2026", "summary": "O melhor mod de futebol brasileiro para PS2.", "genre": "Esporte"},
+            "LITE_000.01": {"name": "Nostalgia Collection", "summary": "Coletânea de clássicos retrô.", "genre": "Coletânea"},
+            "SLUS_000.00": {"name": "Nostalgia Collection", "summary": "Coletânea de clássicos retrô.", "genre": "Coletânea"},
+            "SLUS_740.32": {"name": "The King of Fighters 11 in 1", "summary": "Coletânea de jogos arcade do maior jogo de luta de todos os tempos.", "genre": "Coletânea / Luta / Arcade"},
+            "SLUS_774.47": {"name": "Anime Hero I", "summary": "Anime Hero I é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime.", "genre": "Música"},
+            "SLUS_774.48": {"name": "Anime Hero II Evolution", "summary": "Anime Hero II Evolution é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero I.", "genre": "Música"},
+            "SLUS_222.22": {"name": "Anime Hero III Revolution", "summary": "Anime Hero III Revolution é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero II.", "genre": "Música"},
+            "SLUS_216.72": {"name": "Anime Hero IV Spirit Burning", "summary": "Anime Hero IV Spirit Burning é um mod não oficial de Guitar Hero III para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero III.", "genre": "Música"},
+            "SLUS_216.73": {"name": "Anime Hero V Black Edition", "summary": "Anime Hero V Black Edition é um mod não oficial de Guitar Hero III para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero IV.", "genre": "Música"},
+            "SLUS_215.86": {"name": "Anime Hero Zero", "summary": "Anime Hero Zero é uma versão modificada não oficial de Guitar Hero II para PlayStation 2 que adiciona músicas de anime ao jogo.", "genre": "Música"},
+            "SLUS_215.87": {"name": "Anime Hero Zero 2", "summary": "Anime Hero Zero 2 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genre": "Música"},
+            "SLUS_261.63": {"name": "Anime Hero Zero 3", "summary": "Anime Hero Zero 3 é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo é uma sequência do Anime Hero Zero.", "genre": "Música"},
+            "SLUS_416.34": {"name": "Anime Hero Zero ODLVE", "summary": "Anime Hero Zero ODLVE é um mod não oficial de Guitar Hero II para PlayStation 2 que adiciona música de anime. O jogo pode ser considerada uma sequência do Anime Hero Zero.", "genre": "Música"}
         }
 
         self.dev_map = {}
@@ -55,8 +54,8 @@ class MetadataManager:
     def fetch_game_data(self, game_name, game_type, game_id=None):
         if game_id and game_id in self.manual_db:
             m = self.manual_db[game_id]
-            return {"name": m['name'], "summary": m['summary'], "genre": m.get('genre', 'Ação'), 
-                    "release_date": "Desconhecido", "rating": "5", "players": "1", "developer": "Custom"}
+            return {"name": m['name'], "summary": m['summary'], "genre": m.get('genre', 'Outros'), 
+                    "release_date": "Desconhecido", "rating": "5", "players": "1", "developer": "Desconhecido"}
         
         cached = self.cache.get_game(game_id, game_name)
         if cached: return cached
@@ -85,27 +84,36 @@ class MetadataManager:
 
         if not games: return None
 
-        best_match = None
-        for g in games:
-            api_title = g['game_title'].lower()
-            has_digit_search = any(char.isdigit() for char in search_term)
-            has_digit_api = any(char.isdigit() for char in api_title)
-            
-            if has_digit_search and not has_digit_api: continue
-            
-            if search_term.lower() in api_title:
-                best_match = g
-                break
+        valid_desc_games = [
+            g for g in games 
+            if g.get('overview') and len(g.get('overview')) > 50
+            and not any(word in g.get('overview').lower() for word in [' mod ', ' hack', ' fan-made', ' version by'])
+        ]
 
-        if not best_match:
-            valid_desc = [g for g in games if g.get('overview')]
-            best_match = valid_desc[0] if valid_desc else games[0]
+        has_digit_search = any(char.isdigit() for char in search_term)
 
-        game = best_match
+        if valid_desc_games:
+            best_match = None
+            for g in valid_desc_games:
+                api_title = g['game_title'].lower()
+                has_digit_api = any(char.isdigit() for char in api_title)
+                
+                if has_digit_search != has_digit_api: continue
+                
+                if search_term.lower() in api_title:
+                    best_match = g
+                    break
+            
+            game = best_match if best_match else max(valid_desc_games, key=lambda x: len(x.get('overview')))
+        else:
+            game = min(games, key=lambda x: len(x['game_title']))
 
         display_name = game['game_title']
+        display_name = re.sub(r'\(.*?\)|\[.*?\]', '', display_name)
+        display_name = re.sub(r'(?i)\b(Greatest Hits|Platinum|The Best|Selection|Limited Edition|Special Edition|Bundle|Lara Croft|Onimusha:)\b', '', display_name)
+        display_name = display_name.replace(":", "").strip()
 
-        if search_term.lower() not in display_name.lower():
+        if len(display_name) < 3 or search_term.lower() not in display_name.lower():
             display_name = search_term
 
         raw_ov = game.get('overview', '')
@@ -128,7 +136,7 @@ class MetadataManager:
         if dev_ids and len(dev_ids) > 0:
             dev_id = str(dev_ids[0])
             developer = include_data.get('developers', {}).get(dev_id, {}).get('name') or self.dev_map.get(dev_id, "Desconhecido")
-
+        
         genre_ids = game.get('genres') or []
         genre_list = []
         genre_trans = {

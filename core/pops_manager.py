@@ -11,7 +11,6 @@ class POPSManager:
         self.base_elf = self.pops_dir / "POPSTARTER.ELF"
         self.base_vmc0 = self.pops_dir / "SLOT0.VMC"
         self.base_vmc1 = self.pops_dir / "SLOT1.VMC"
-        self.base_patch5 = self.pops_dir / "PATCH_5.BIN"
         self.base_patch9 = self.pops_dir / "PATCH_9.BIN"
 
         self.default_cheats = [
@@ -20,8 +19,7 @@ class POPSManager:
             "$COMPATIBILITY_0x06",
             "$SUBCDSTATUS",
             "$SMOOTH",
-            "$HDTVFIX",
-            "$IGR2"
+            "$HDTVFIX"
         ]
 
     def create_global_cheats(self):
@@ -54,28 +52,32 @@ class POPSManager:
             self.logger.ok(f"Executável criado: {target_elf.name}")
 
     def _setup_vmcs(self, game_folder):
-        """Copia os VMCs base ou avisa se não encontrar as matrizes na raiz."""
-        vmc_pairs = [(self.base_vmc0, "SLOT0.VMC"), (self.base_vmc1, "SLOT1.VMC")]
-        created = False
-        for base, name in vmc_pairs:
-            target = game_folder / name
-            if target.exists():
-                self.logger.skip(f"VMC preservado (já existente): {target.name}")
+        """Copia os arquivos VMC funcionais da raiz /POPS para a pasta do jogo."""
+        vmc_pairs = [
+            (self.base_vmc0, "SLOT0.VMC"), 
+            (self.base_vmc1, "SLOT1.VMC")
+        ]
+        any_copied = False
+        for base_path, target_name in vmc_pairs:
+            target_path = game_folder / target_name
+            if target_path.exists():
+                self.logger.skip(f"VMC preservado (já existe): {target_name} em {game_folder.name}")
                 continue
-            if base.exists():
-                shutil.copy2(base, target)
-                created = True
+            if base_path.exists():
+                try:
+                    shutil.copy2(base_path, target_path)
+                    any_copied = True
+                except Exception as e:
+                    self.logger.error(f"Erro ao copiar VMC {target_name}: {e}")
             else:
-                self.logger.warn(f"VMC base {name} não encontrado. Gerando VMC de 1MB...")
-                with open(target, "wb") as f:
-                    f.write(b'\x00' * (1 * 1024 * 1024 + 64))
-                created = True
-        if created:
-            self.logger.info(f"VMCs configurados em: {game_folder.name}")
+                self.logger.error(f"ERRO: Matriz {target_name} NÃO ENCONTRADA na raiz /POPS!")
+                self.logger.warn("Certifique-se de que os arquivos SLOT0.VMC e SLOT1.VMC funcionais estão na pasta POPS.")
+        if any_copied:
+            self.logger.ok(f"Memory Cards funcionais aplicados em: {game_folder.name}")
 
     def _copy_patches_to_folder(self, game_folder):
         """Copia os patches ou avisa se as matrizes sumiram da raiz."""
-        patches_base = [(self.base_patch5, "PATCH_5.BIN"), (self.base_patch9, "PATCH_9.BIN")]
+        patches_base = [(self.base_patch9, "PATCH_9.BIN")]
         any_patch_copied = False
         for base_path, patch_name in patches_base:
             target = game_folder / patch_name
@@ -124,10 +126,7 @@ class POPSManager:
             self.logger.info(f"Configuração Multi-disco aplicada em: {game_folder.name}")
 
     def update_apps_config(self, all_items):
-        """
-        Atualiza o arquivo conf_apps.cfg na raiz do USB.
-        Mantém o que já existe e adiciona os novos jogos de PS1.
-        """
+        """Atualização do arquivo conf_apps.cfg na raiz do USB. Mantém o que já existe e adiciona os novos jogos de PS1."""
         apps_cfg_path = self.root / "conf_apps.cfg"
         existing_content = {}
         if apps_cfg_path.exists():
