@@ -3,31 +3,21 @@ from datetime import datetime
 from pathlib import Path
 
 class Logger:
-    def __init__(self):
-        log_file = Path(__file__).parent.parent / "session_history.log"
-        logging.basicConfig(
-            filename=log_file,
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            encoding='utf-8'
-        )
+    def __init__(self, gui_callback=None):
+        self.gui_callback = gui_callback
 
-    def info(self, msg):
-        print(f"[INFO] {msg}")
-        logging.info(msg)
-
-    def error(self, msg):
-        print(f"[ERRO] {msg}")
-        logging.error(msg)
-        
+    def _log(self, msg, type_name):
+        print(f"[{type_name}] {msg}")
+        if self.gui_callback:
+            self.gui_callback(f"[{type_name}] {msg}\n")
+    
     def ok(self, msg):
-        print(f"[OK] {msg}")
-        logging.info(f"SUCESSO: {msg}")
-
-    def skip(self, msg):
-        print(f"[SKIP] {msg}")
-        logging.info(f"PULADO: {msg}")
-
+        self._log(msg, "OK")
+    def info(self, msg):
+        self._log(msg, "INFO")
     def warn(self, msg):
-        print(f"[AVISO] {msg}")
-        logging.warning(msg)
+        self._log(msg, "WARN")
+    def error(self, msg):
+        self._log(msg, "ERROR")
+    def skip(self, msg):
+        self._log(msg, "SKIP")

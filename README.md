@@ -4,6 +4,7 @@ Uma ferramenta robusta e automatizada para organização de bibliotecas de jogos
 
 ## ✨ Funcionalidades Atuais (Backend)
 
+- **Interface Moderna**: GUI desenvolvida em CustomTkinter com log em tempo real e filtros de busca.
 - **Scanner Inteligente**: Identifica automaticamente jogos em pastas OPL (`DVD`, `CD`, `POPS`, `APPS`) e extrai Game IDs (seriais) de arquivos de PS2.
 - **Sanitização Profunda (Rename)**: Limpeza automática de nomes de arquivos, removendo tags de região (USA, Europe), versões, revisões e lixos de cena (`[Hacked]`, `[v1.0]`, etc.).
 - **Padrão POPStarter Pro**: 
@@ -20,15 +21,17 @@ Uma ferramenta robusta e automatizada para organização de bibliotecas de jogos
     - Limita descrições a 255 caracteres com reticências (`...`) automáticas.
 - **Banco de Dados Manual**: Suporte a mods e traduções via manual_db interno.
 - **Sistema de Cache Local**: Armazena metadados em JSON para economizar cota de API e acelerar execuções futuras.
-- **Logger com Histórico**: Todas as operações são exibidas no terminal e salvas em `session_history.log`.
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Python 3.12+**
+- **CustomTkinter (UI)**
 - **PyCdlib**: Manipulação de sistemas de arquivos ISO.
 - **Requests**: Integração com a API TheGamesDB (v1).
 - **Deep Translator**: Tradução dinâmica de conteúdos.
 - **Python-dotenv**: Gerenciamento de variáveis de ambiente.
+- **TheGamesDB API (Metadata)**
+- **Google Translate API (Tradução de Sinopses)**
 
 ---
 
@@ -36,7 +39,7 @@ Uma ferramenta robusta e automatizada para organização de bibliotecas de jogos
 
 ### 1. Clonar o Repositório
 ```bash
-git clone [https://github.com/icarocarvalho15/ps2-aio-tools.git](https://github.com/icarocarvalho15/ps2-aio-tools.git)
+git clone https://github.com/icarocarvalho15/ps2-aio-tools.git
 cd ps2-aio-tools
 ```
 
@@ -57,7 +60,7 @@ python -m pip install -r requirements.txt
 ```
 
 ### 4. Configurar Variáveis de Ambiente
-Crie um arquivo chamado `.env` na raiz do projeto e adicione suas credenciais da API TheGamesDB:
+Crie um arquivo chamado `.env` na raiz do projeto e adicione sua credencial da API TheGamesDB:
 ```bash
 THEGAMESDB_API_KEY=sua_chave_aqui
 ```

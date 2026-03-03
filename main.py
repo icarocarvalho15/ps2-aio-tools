@@ -9,36 +9,25 @@ from core.metadata import MetadataManager
 from core.cfg_manager import CFGManager
 from core.pops_manager import POPSManager
 
-def main():
-    parser = argparse.ArgumentParser(description="PS2 AIO Tools - DravDev")
-    parser.add_argument("--root", required=True, help="Raiz do USB/HDD")
-    parser.add_argument("--scan-only", action="store_true", help="Apenas escaneia e exibe os resultados")
-    parser.add_argument("--full", action="store_true", help="Executa todo o fluxo de automação")
-    parser.add_argument("--rename", action="store_true", help="Apenas renomeia os arquivos")
-    parser.add_argument("--pops", action="store_true", help="Apenas setup de PS1 (VMCs, Patches, TXTs)")
-    parser.add_argument("--metadata", action="store_true", help="Apenas gera os arquivos CFG")
-    parser.add_argument("--keep-id", action="store_true", help="Mantém ID no rename (PS2)")
-    parser.add_argument("--filter", help="Filtra o scan por um nome específico (ex: --filter 'Black')")
-    
-    args = parser.parse_args()
-    logger = Logger()
+def main_logic(args, gui_callback=None):
+    """Lógica principal separada para suportar CLI e GUI. gui_callback: Função opcional para enviar logs para a interface."""
+    logger = Logger(gui_callback=gui_callback)
 
     validator = OPLValidator(args.root, logger)
-    if not validator.validate_root(): return
-    validator.validate_structure(silent=True)
+    if not validator.validate_root():
+        return
+    validator.validate_structure(silent=False)
 
-    logger.info("Escaneando arquivos no diretório...")
     items = scan_all(args.root, logger)
     
     if args.filter:
         original_count = len(items)
         items = [i for i in items if args.filter.lower() in i['file_name'].lower()]
-        logger.info(f"Filtro aplicado: '{args.filter}'. Itens filtrados: {len(items)} de {original_count}")
+        logger.info(f"Filtro aplicado: '{args.filter}'. Itens selecionados: {len(items)}")
     
     if args.scan_only:
         for item in items:
-            print(f"-> Encontrado: {item['file_name']} | Tipo: {item['type']} | ID: {item['game_id']}")
-        logger.ok(f"Scan concluído para {len(items)} itens.")
+            logger.info(f"-> Encontrado: {item['file_name']} | ID: {item['game_id']}")
         return
 
     do_rename = args.full or args.rename
@@ -78,7 +67,8 @@ def main():
 
             if not cfg_full_path.exists() or args.filter:
                 data = metadata_tool.fetch_game_data(nome_sem_ext, item['type'], item['game_id'])
-                cfg_tool.generate_cfg(item, data)
+                if data:
+                    cfg_tool.generate_cfg(item, data)
             else:
                 logger.skip(f"CFG já existe: {item['cfg_target']}")
 
@@ -86,6 +76,21 @@ def main():
         pops_tool.update_apps_config(items)
 
     logger.ok(f"Processamento concluído para {len(items)} itens.")
+
+def main():
+    """Ponto de entrada para uso via CLI (Terminal)"""
+    parser = argparse.ArgumentParser(description="PS2 AIO Tools - DravDev")
+    parser.add_argument("--root", required=True, help="Raiz do USB/HDD")
+    parser.add_argument("--scan-only", action="store_true")
+    parser.add_argument("--full", action="store_true")
+    parser.add_argument("--rename", action="store_true")
+    parser.add_argument("--pops", action="store_true")
+    parser.add_argument("--metadata", action="store_true")
+    parser.add_argument("--keep-id", action="store_true")
+    parser.add_argument("--filter", help="Filtra por nome")
+    
+    args = parser.parse_args()
+    main_logic(args)
 
 if __name__ == "__main__":
     main()
